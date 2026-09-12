@@ -5,43 +5,80 @@
  * Handles group-participants.update events: welcome, goodbye,
  * anti-promote, and anti-demote.
  *
- * FIXED: WhatsApp now often reports group participants using an opaque
- * "@lid" JID instead of their real phone-number JID (see the same
- * issue documented in lib/lidResolver.js / lib/antiStatusMention.js).
- * The previous version used `group.participants[0]` directly for
- * profilePictureUrl(), @mentions, and groupParticipantsUpdate() calls
- * — when that JID was an unresolved @lid, these could silently fail
- * or behave inconsistently, which is why welcome/goodbye appeared to
- * "do nothing" even when enabled. This version resolves @lid
- * participants to their real phone JID first (falling back to the
- * raw @lid if resolution isn't possible), and wraps each step in its
- * own try/catch with logging so any remaining failures are visible in
- * the logs instead of silently swallowed.
+ * FIXED (again): the previous version assumed `group.participants` was
+ * an array of plain JID strings (e.g. "12345@lid"). Live logs showed
+ * this is no longer true — WhatsApp/Baileys now sends an array of
+ * OBJECTS instead:
+ *
+ *   participants: [{ id: "126302740856945@lid",
+ *                     phoneNumber: "255767862457@s.whatsapp.net",
+ *                     admin: null }]
+ *
+ * Calling `.endsWith()` on one of these objects threw
+ * "rawMembre?.endsWith is not a function" every single time, so
+ * welcome/goodbye/antipromote/antidemote never got past that line.
+ *
+ * The good news: WhatsApp already includes the real phone-number JID
+ * directly as `.phoneNumber` on each participant object — no LID
+ * lookup needed at all when it's present. `extractJid()` below handles
+ * both this new object shape AND the old plain-string shape
+ * defensively, so this keeps working even if the payload shape
+ * changes again in either direction.
  */
 const { recupevents } = require('../lib/welcome');
 const { resolveLidForStatus } = require('../lib/lidResolver');
 
 /**
+ * Pulls a usable JID string out of a participant entry, whichever
+ * shape it comes in.
+ * @param {string|{id?:string, jid?:string, phoneNumber?:string, phone_number?:string}} p
+ */
+function extractJid(p) {
+    if (!p) return null;
+    if (typeof p === 'string') return p;
+    if (typeof p === 'object') {
+        return p.phoneNumber || p.phone_number || p.id || p.jid || null;
+    }
+    return null;
+}
+
+/**
  * @param {import('@whiskeysockets/baileys').WASocket} client
- * @param {{ id: string, participants: string[], action: string, author?: string }} group
+ * @param {string} jid - possibly @lid, possibly already a phone JID
+ */
+async function resolveIfLid(client, jid) {
+    if (jid && jid.endsWith('@lid')) {
+        return resolveLidForStatus(client, jid);
+    }
+    return jid;
+}
+
+/**
+ * @param {import('@whiskeysockets/baileys').WASocket} client
+ * @param {{ id: string, participants: any[], action: string, author?: any }} group
  */
 async function groupEvents(client, group) {
     console.log('[eventHandler] Group participants update triggered:', JSON.stringify(group));
 
     try {
         const metadata = await client.groupMetadata(group.id);
-        const rawMembre = group.participants[0];
 
-        // Resolve @lid participants to their real phone JID where
-        // possible — WhatsApp's newer identity system means group
-        // event payloads can report members this way now.
-        const resolvedMembre = rawMembre?.endsWith('@lid')
-            ? await resolveLidForStatus(client, rawMembre)
-            : rawMembre;
+        // Extract + resolve every participant JID up front — membres is
+        // now guaranteed to be an array of usable JID strings, whatever
+        // shape the raw event gave us.
+        const rawJids = group.participants.map(extractJid).filter(Boolean);
+        const membres = [];
+        for (const jid of rawJids) {
+            membres.push(await resolveIfLid(client, jid));
+        }
 
-        console.log('[eventHandler] participant resolved:', rawMembre, '->', resolvedMembre);
+        console.log('[eventHandler] participants resolved:', JSON.stringify(rawJids), '->', JSON.stringify(membres));
 
-        const membres = [resolvedMembre, ...group.participants.slice(1)];
+        if (membres.length === 0) {
+            console.log('[eventHandler] no usable participant JID found, aborting.');
+            return;
+        }
+
         const groupName = metadata.subject || "Group";
         const groupDesc = metadata.desc || "no group information";
 
@@ -143,17 +180,16 @@ async function groupEvents(client, group) {
 
         // 🛑 ANTI-PROMOTE
         else if (group.action === 'promote' && (await recupevents(group.id, "antipromote")) === 'on') {
-            const rawAuthor = group.author;
-            const resolvedAuthor = rawAuthor?.endsWith('@lid')
-                ? await resolveLidForStatus(client, rawAuthor)
-                : rawAuthor;
+            const rawAuthor = extractJid(group.author);
+            const resolvedAuthor = await resolveIfLid(client, rawAuthor);
 
             if (
+                !resolvedAuthor ||
                 resolvedAuthor === metadata.owner ||
                 resolvedAuthor === client.user.id ||
                 resolvedAuthor === membres[0]
             ) {
-                console.log('[eventHandler] SuperUser detected, no anti-promote action taken.');
+                console.log('[eventHandler] SuperUser (or no author) detected, no anti-promote action taken.');
                 return;
             }
 
@@ -171,17 +207,16 @@ async function groupEvents(client, group) {
 
         // 🟡 ANTI-DEMOTE
         else if (group.action === 'demote' && (await recupevents(group.id, "antidemote")) === 'on') {
-            const rawAuthor = group.author;
-            const resolvedAuthor = rawAuthor?.endsWith('@lid')
-                ? await resolveLidForStatus(client, rawAuthor)
-                : rawAuthor;
+            const rawAuthor = extractJid(group.author);
+            const resolvedAuthor = await resolveIfLid(client, rawAuthor);
 
             if (
+                !resolvedAuthor ||
                 resolvedAuthor === metadata.owner ||
                 resolvedAuthor === client.user.id ||
                 resolvedAuthor === membres[0]
             ) {
-                console.log('[eventHandler] SuperUser detected, no anti-demote action taken.');
+                console.log('[eventHandler] SuperUser (or no author) detected, no anti-demote action taken.');
                 return;
             }
 
