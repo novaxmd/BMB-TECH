@@ -62,7 +62,7 @@ try {
     console.log('⚠️ Could not set bundled ffmpeg path:', e.message);
 }
 
-const { verifierEtatJid , recupererActionJid } = require("./lib/antilien");
+const { verifierEtatJid } = require("./lib/antilien");
 const { atbverifierEtatJid , atbrecupererActionJid } = require("./lib/antibot");
 let evt = require(__dirname + "/devbmb/bmbtz");
 const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./lib/banUser");
@@ -828,6 +828,7 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
      //anti-link
      try {
         const linkRegex = /(https?:\/\/[^\s]+|chat\.whatsapp\.com\/[^\s]+|www\.[^\s]+)/i;
+        const { getRemoveMode: getAntilinkRemoveMode, getWarnMode: getAntilinkWarnMode } = require('./lib/antilien');
         const yes = verifGroupe ? await verifierEtatJid(origineMessage) : false;
 
         if (verifGroupe && yes) {
@@ -855,49 +856,39 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
                         participant: auteurMessage
                     };
 
+                    // The master "antilink on" toggle always means: delete
+                    // the offending message. "remove" and "warn" are
+                    // independent modifiers layered on top of that —
+                    // see plugins/Group/antilink.js for the new
+                    // .antilink / .antilink remove / .antilink warn
+                    // command syntax this replaces the old single-mode
+                    // (delete/warn/remove) design with. No sticker is
+                    // sent for any of this anymore (previously "remove"
+                    // sent a gif sticker — removed per request).
                     try {
                         await client.sendMessage(origineMessage, { delete: key });
                     } catch (e) {
                         console.log('antilink delete failed:', e.message || e);
                     }
 
-                    var action = await recupererActionJid(origineMessage);
-                    var txt = "link detected, \n";
+                    const removeOn = await getAntilinkRemoveMode(origineMessage);
+                    const warnOn = await getAntilinkWarnMode(origineMessage);
 
-                    if (action === 'remove') {
-                        txt += `message deleted \n @${auteurMessage.split("@")[0]} removed from group.`;
+                    if (removeOn) {
+                        // Immediate kick takes priority over warn-accumulation
+                        // when both are enabled — no point tracking a warn
+                        // count if the sender is being removed right now.
+                        const txt = `link detected \nmessage deleted \n@${auteurMessage.split("@")[0]} removed from group.`;
                         await client.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] });
                         try {
                             await client.groupParticipantsUpdate(origineMessage, [auteurMessage], "remove");
                         } catch (e) {
                             console.log("antilink remove failed: " + e);
                         }
-
-                        try {
-                            const gifLink = "https://github.com/novaxmd/BMB-XMD-DATA/raw/refs/heads/main/remover.gif";
-                            var sticker = new Sticker(gifLink, {
-                                pack: 'Bmb-Tech',
-                                author: conf.OWNER_NAME,
-                                type: StickerTypes.FULL,
-                                categories: ['🤩', '🎉'],
-                                id: '12345',
-                                quality: 50,
-                                background: '#000000'
-                            });
-                            const stickerPath = `st1-${ms.key.id}.webp`;
-                            await sticker.toFile(stickerPath);
-                            await client.sendMessage(origineMessage, { sticker: fs.readFileSync(stickerPath) });
-                            await fs.unlink(stickerPath);
-                        } catch (e) { console.log('antilink sticker failed:', e.message || e); }
                     }
 
-                    else if (action === 'delete') {
-                        txt += `message deleted \n @${auteurMessage.split("@")[0]} avoid sending link.`;
-                        await client.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] });
-                    }
-
-                    else if (action === 'warn') {
-                        const { getGroupFeature, addGroupWarn, resetGroupWarn } = require('./lib/groupProtection');
+                    else if (warnOn) {
+                        const { addGroupWarn, resetGroupWarn } = require('./lib/groupProtection');
                         const warnLimit = Number(getConf('WARN_COUNT')) || 3;
                         const senderNum = auteurMessage.split('@')[0];
                         const warnCount = await addGroupWarn(origineMessage, 'antilink', senderNum);
@@ -916,6 +907,13 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
                             const msg = `Link detected , your warn_count was upgraded ;\n rest : ${rest} `;
                             await client.sendMessage(origineMessage, { text: msg, mentions: [auteurMessage] });
                         }
+                    }
+
+                    else {
+                        // Neither remove nor warn is on — just delete,
+                        // silently, no follow-up message.
+                        const txt = `link detected \nmessage deleted \n@${auteurMessage.split("@")[0]} avoid sending link.`;
+                        await client.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] });
                     }
                 }
             }
