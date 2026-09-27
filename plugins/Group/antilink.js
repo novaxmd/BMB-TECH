@@ -1,97 +1,120 @@
 const { bmbtz } = require("../../devbmb/bmbtz");
-const { ajouterOuMettreAJourJid, mettreAJourAction, verifierEtatJid, recupererActionJid } = require("../../lib/antilien");
+const {
+  ajouterOuMettreAJourJid, verifierEtatJid,
+  setRemoveMode, getRemoveMode,
+  setWarnMode, getWarnMode,
+} = require("../../lib/antilien");
 
 /**
  * antilink
  *
- * Fixed a real bug while splitting this out: `recupererActionJid` was
- * used (to show the current action in the help menu) but never
- * imported from lib/antilien.js — calling `.antilink` with no
- * arguments would throw a ReferenceError every time.
+ * New syntax — three independent toggles instead of one mode:
+ *   .antilink on / off            — master: delete detected links
+ *   .antilink remove on / off     — also kick immediately when caught
+ *   .antilink warn on / off       — also warn (kicks at the group's
+ *                                   warn limit) when caught
+ *
+ * Example combos:
+ *   antilink=on, remove=off, warn=off  -> link just gets deleted
+ *   antilink=on, remove=on             -> link deleted + sender kicked
+ *   antilink=on, warn=on               -> link deleted + sender warned
  */
 bmbtz({ nomCom: "antilink", alias: ["antilinks"], categorie: 'Group', reaction: "🔗" }, async (dest, client, commandeOptions) => {
   var { repondre, arg, verifGroupe, superUser, verifAdmin } = commandeOptions;
 
   if (!verifGroupe) return repondre("🚫 *This command works in groups only.*");
 
-  if (superUser || verifAdmin) {
-    const enetatoui = await verifierEtatJid(dest);
-    try {
-      if (!arg || !arg[0]) {
-        const currentAction = await recupererActionJid(dest);
+  if (!(superUser || verifAdmin)) {
+    return repondre("🚫 *Only group admins or super users can use this command.*");
+  }
+
+  try {
+    const sub = (arg && arg[0] || '').toLowerCase();
+
+    // .antilink remove on/off
+    if (sub === 'remove') {
+      const val = (arg[1] || '').toLowerCase();
+      if (val !== 'on' && val !== 'off') {
+        const current = await getRemoveMode(dest);
         return repondre(
-`╭───❰ *ANTILINK HELP MENU* ❱───╮
+`╭───❰ *ANTILINK · REMOVE* ❱───╮
+│ Status: ${current ? 'ON ✅' : 'OFF ❌'}
 │
-│ Status: ${enetatoui ? 'ON ✅' : 'OFF ❌'}
-│ Action: ${currentAction.toUpperCase()}
+│ ⚙️ antilink remove on
+│ ⚙️ antilink remove off
 │
-│ ⚙️ *antilink on* → Activate anti-link
-│ ⚙️ *antilink off* → Deactivate anti-link
-│ ⚙️ *antilink delete* → Delete link only
-│ ⚙️ *antilink warn* → Delete + warn (kicks after limit)
-│ ⚙️ *antilink remove* → Delete + kick immediately
-│
-│ 📝 Default action is: *delete*
+│ When ON, the sender is kicked
+│ immediately after their link is
+│ deleted.
 ╰────────────────────────────╯`
         );
       }
-
-      const sub = arg[0].toLowerCase();
-
-      if (sub === 'on') {
-        if (enetatoui) {
-          repondre(
-`╭───❰ *ANTILINK STATUS* ❱───╮
-│ 🔗 Antilink is *already activated* 
-╰──────────────────────────╯`
-          );
-        } else {
-          await ajouterOuMettreAJourJid(dest, "oui");
-          repondre(
-`╭───❰ *ANTILINK STATUS* ❱───╮
-│ ✅ Antilink has been *activated*
-╰──────────────────────────╯`
-          );
-        }
-      } else if (sub === 'off') {
-        if (enetatoui) {
-          await ajouterOuMettreAJourJid(dest, "non");
-          repondre(
-`╭───❰ *ANTILINK STATUS* ❱───╮
-│ ❌ Antilink has been *deactivated*
-╰──────────────────────────╯`
-          );
-        } else {
-          repondre(
-`╭───❰ *ANTILINK STATUS* ❱───╮
-│ ℹ️ Antilink was *not active* 
-╰──────────────────────────╯`
-          );
-        }
-      } else if (['remove', 'warn', 'delete'].includes(sub)) {
-        await mettreAJourAction(dest, sub);
-        if (!enetatoui) {
-          await ajouterOuMettreAJourJid(dest, "oui");
-        }
-        repondre(
-`╭───❰ *ANTILINK ACTION UPDATED* ❱───╮
-│ 🔧 Action set to: *${sub.toUpperCase()}*
-│ Status: ON ✅
-╰────────────────────────────────╯`
-        );
-      } else {
-        repondre(
-`❗ Wrong usage.
-
-Try: *antilink on*, *antilink off*, *antilink delete*, *antilink warn*, *antilink remove*.`
-        );
-      }
-
-    } catch (error) {
-      repondre("❌ *Error:* " + (error.message || error));
+      await setRemoveMode(dest, val === 'on');
+      return repondre(
+`╭───❰ *ANTILINK · REMOVE* ❱───╮
+│ 🔧 Remove-on-catch: *${val.toUpperCase()}*
+╰────────────────────────────╯`
+      );
     }
 
-  } else {
-    repondre("🚫 *Only group admins or super users can use this command.*");
+    // .antilink warn on/off
+    if (sub === 'warn') {
+      const val = (arg[1] || '').toLowerCase();
+      if (val !== 'on' && val !== 'off') {
+        const current = await getWarnMode(dest);
+        return repondre(
+`╭───❰ *ANTILINK · WARN* ❱───╮
+│ Status: ${current ? 'ON ✅' : 'OFF ❌'}
+│
+│ ⚙️ antilink warn on
+│ ⚙️ antilink warn off
+│
+│ When ON, the sender is warned;
+│ hitting the group's warn limit
+│ (see .setwarnlimit) kicks them.
+╰──────────────────────────╯`
+        );
+      }
+      await setWarnMode(dest, val === 'on');
+      return repondre(
+`╭───❰ *ANTILINK · WARN* ❱───╮
+│ 🔧 Warn-on-catch: *${val.toUpperCase()}*
+╰──────────────────────────╯`
+      );
+    }
+
+    // .antilink on / off / (no args = status)
+    if (sub === 'on' || sub === 'off') {
+      await ajouterOuMettreAJourJid(dest, sub === 'on' ? 'oui' : 'non');
+      return repondre(
+`╭───❰ *ANTILINK STATUS* ❱───╮
+│ ${sub === 'on' ? '✅ Antilink has been *activated*' : '❌ Antilink has been *deactivated*'}
+╰──────────────────────────╯`
+      );
+    }
+
+    const masterOn = await verifierEtatJid(dest);
+    const removeOn = await getRemoveMode(dest);
+    const warnOn = await getWarnMode(dest);
+
+    return repondre(
+`╭───❰ *ANTILINK HELP MENU* ❱───╮
+│
+│ Delete links : ${masterOn ? 'ON ✅' : 'OFF ❌'}
+│ Also remove  : ${removeOn ? 'ON ✅' : 'OFF ❌'}
+│ Also warn    : ${warnOn ? 'ON ✅' : 'OFF ❌'}
+│
+│ ⚙️ antilink on / antilink off
+│ ⚙️ antilink remove on / off
+│ ⚙️ antilink warn on / off
+│
+│ These combine — e.g. turn on
+│ antilink + remove for an
+│ instant-kick antilink.
+╰────────────────────────────╯`
+    );
+
+  } catch (error) {
+    repondre("❌ *Error:* " + (error.message || error));
   }
 });
