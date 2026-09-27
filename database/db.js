@@ -69,7 +69,8 @@ const _GS_DEFAULTS = {
     antidemote: 'off',
     antipromote: 'off',
     antilink: 'off',
-    antilink_action: 'delete',
+    antilink_remove: 'off',
+    antilink_warn: 'off',
     welcome: 'off',
     goodbye: 'off',
     warn_limit: 3,
@@ -102,7 +103,7 @@ const PG_SCHEMA = [
     `CREATE TABLE IF NOT EXISTS group_settings (
         jid TEXT PRIMARY KEY, antidelete INTEGER DEFAULT 1,
         events INTEGER DEFAULT 0, antidemote TEXT DEFAULT 'off', antipromote TEXT DEFAULT 'off',
-        antilink TEXT DEFAULT 'off', antilink_action TEXT DEFAULT 'delete',
+        antilink TEXT DEFAULT 'off', antilink_remove TEXT DEFAULT 'off', antilink_warn TEXT DEFAULT 'off',
         welcome TEXT DEFAULT 'off', goodbye TEXT DEFAULT 'off', warn_limit INTEGER DEFAULT 3,
         custom_welcome TEXT DEFAULT '', custom_goodbye TEXT DEFAULT '',
         antisticker TEXT DEFAULT 'off',
