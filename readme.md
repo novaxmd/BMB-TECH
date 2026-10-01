@@ -30,7 +30,7 @@
 <p align="center">
     <strong>2. GET SESSION ID</strong>
     <br>
-    <a href="https://bmb-pair-site.onrender.com/" target="_blank">
+    <a href="https://bmb-pair-zone.onrender.com" target="_blank">
         <img alt="WEBSITE" src="https://img.shields.io/badge/Pair-100000?style=for-the-badge&logo=scan&logoColor=white&labelColor=darkred&color=darkred"/>
     </a>
 </p>
