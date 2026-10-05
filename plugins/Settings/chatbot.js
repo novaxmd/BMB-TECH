@@ -7,14 +7,14 @@
  */
 const { bmbtz } = require("../../devbmb/bmbtz");
 const { getSetting, updateCachedSetting } = require("../../lib/settingsCache");
-const { getAllowed } = require("../../lib/chatbot");
+const { getAllowed, getFlag } = require("../../lib/chatbot");
 
 const LINE = "━━━━━━━━━━━━━━━━";
 const fmt = (title, lines) =>
   `📌 *${title}*\n${LINE}\n${(Array.isArray(lines) ? lines : [lines]).join("\n")}\n${LINE}\n© bmb tech`;
 const ON = new Set(["on", "enable", "enabled", "true", "1", "yes", "start"]);
 const OFF = new Set(["off", "disable", "disabled", "false", "0", "no", "stop"]);
-const isOn = (key) => String(getSetting(key, "off")).toLowerCase() === "on";
+const isOn = (key) => getFlag(key);
 
 function toggle({ nomCom, alias, key, title, onLines, offLines }) {
   bmbtz({ nomCom, alias: alias || [], categorie: "Settings", reaction: "🤖" }, async (dest, client, o) => {
