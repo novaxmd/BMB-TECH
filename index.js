@@ -1011,6 +1011,14 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
     }        
              
          
+            // ===== AI CHATBOT (autoai / chatbotpm) =====
+            try {
+                require('./lib/chatbot').handleMessage({
+                    client, ms, texte, mtype, origineMessage, auteurMessage,
+                    verifGroupe, idBot, superUser, commandeOptions
+                }).catch((e) => console.log('❌ [CHATBOT]:', e.message));
+            } catch (e) { console.log('❌ [CHATBOT load]:', e.message); }
+
             if (verifCom) {
                 const cd = evt.cm.find((bmbtz) => bmbtz.nomCom === (com) || (Array.isArray(bmbtz.alias) && bmbtz.alias.includes(com)));
                 if (cd) {
