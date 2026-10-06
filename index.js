@@ -608,6 +608,12 @@ client.ev.on("messages.upsert", async (m) => {
                 cacheLidPhone(lidNum, phoneNum);
             }
 
+            if (ms.key?.remoteJid?.endsWith('@lid') && ms.key?.remoteJidAlt && !ms.key.remoteJidAlt.endsWith('@lid')) {
+                const lidNum = ms.key.remoteJid.split('@')[0].split(':')[0];
+                const phoneNum = ms.key.remoteJidAlt.split('@')[0].split(':')[0].replace(/\D/g, '');
+                cacheLidPhone(lidNum, phoneNum);
+            }
+
             if (mtype === 'reactionMessage') return;
             var texte = mtype == "conversation" ? ms.message.conversation : mtype == "imageMessage" ? ms.message.imageMessage?.caption : mtype == "videoMessage" ? ms.message.videoMessage?.caption : mtype == "extendedTextMessage" ? ms.message?.extendedTextMessage?.text : mtype == "buttonsResponseMessage" ?
                 ms?.message?.buttonsResponseMessage?.selectedButtonId : mtype == "listResponseMessage" ?
@@ -641,7 +647,7 @@ client.ev.on("messages.upsert", async (m) => {
             // "@lid" senders in groups are converted to their real phone number first.
             // Owners: the bot's own number, the creator (DEV_NUMBER), every number in the
             // OWNER_NUMBER / NUMERO_OWNER env vars (comma separated), and sudo users.
-            const senderResolved = ownerAccess.resolveSenderJid(auteurMessage, verifGroupe ? (infosGroupe?.participants || []) : []);
+            const senderResolved = await ownerAccess.resolveSenderAsync(client, auteurMessage, verifGroupe ? (infosGroupe?.participants || []) : [], verifGroupe);
             const access = ownerAccess.classifySender({
                 senderJid: senderResolved,
                 botJid: idBot,
@@ -707,7 +713,7 @@ function mybotpic() {
      return lienAleatoire;
   }
             var commandeOptions = {
-    superUser, dev, fullOwner, isSudo: access.isSudo,
+    superUser, dev, fullOwner, isSudo: access.isSudo, senderJid: senderResolved,
     verifGroupe,
     mbre,
     membreGroupe,
