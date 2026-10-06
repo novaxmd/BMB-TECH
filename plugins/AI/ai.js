@@ -15,6 +15,12 @@ const box = (title, body) => `${title}\n${LINE}\n${body}\n${LINE}\n© bmb tech`;
 const react = (client, dest, ms, emoji) =>
   client.sendMessage(dest, { react: { text: emoji, key: ms.key } }).catch(() => {});
 
+const IDENTITY =
+  "Your name is BMB-TECH AI and you were created by bmb tech. If anyone asks who you are, what your name is, " +
+  "who made you, or which model or company is behind you, answer that you are BMB-TECH AI, created by bmb tech. " +
+  "Never say you are ChatGPT, GPT, OpenAI, Gemini, Google, Llama, Meta, Qwen, Groq or any other model or company. " +
+  "Always reply in the same language the user writes in (Swahili in -> natural Swahili out). Be polite, clear and helpful.";
+
 const NO_KEY_MSG = "No GROQ key set. Add your API keys to keys.js (or set GROQ_KEY_1 in env vars).";
 
 /** Shared template for the text commands (gpt / groq / gemini). */
@@ -34,7 +40,7 @@ function textCommand({ nomCom, alias, title, system, usage, maxTokens = 1024, te
     try {
       const reply = await groq.chat({
         models: groq.fastModels(),
-        messages: [{ role: "system", content: system }, { role: "user", content: text }],
+        messages: [{ role: "system", content: IDENTITY + "\n" + system }, { role: "user", content: text }],
         max_tokens: maxTokens,
         temperature,
       });
@@ -55,7 +61,7 @@ textCommand({
   nomCom: "gpt",
   alias: ["gpt4", "gpt5", "ai", "askgpt", "ask"],
   title: "🤖 *GPT RESPONSE*",
-  system: "You are a highly capable AI assistant. Answer accurately and concisely.",
+  system: "Answer accurately and concisely.",
   usage: "Type a prompt, genius.\nExample: {p}gpt what is AI?",
   errTitle: "AI choked. Classic.",
 });
@@ -67,7 +73,7 @@ textCommand({
   nomCom: "groq",
   alias: ["groqai"],
   title: "📌 *GROQ RESPONSE*",
-  system: "You are a helpful AI assistant powered by Groq's ultra-fast inference. Answer simply and clearly.",
+  system: "Answer simply and clearly.",
   usage: "Provide a query, you walnut.\nExample: {p}groq explain gravity",
   errTitle: "Groq failed.",
 });
@@ -79,7 +85,7 @@ textCommand({
   nomCom: "gemini",
   alias: ["bard", "geminiai"],
   title: "📌 *GEMINI RESPONSE*",
-  system: "You are Gemini, Google's most advanced AI. Be thorough, accurate, and slightly sophisticated in your answers.",
+  system: "Be thorough and accurate in your answers.",
   usage: "Give me something to work with.\nExample: {p}gemini What is AI?",
   errTitle: "Gemini crashed.",
 });
@@ -111,7 +117,7 @@ bmbtz({ nomCom: "chat", alias: ["chatai", "talk"], categorie: "AI", reaction: "�
     const reply = await groq.chat({
       models: groq.fastModels(),
       messages: [
-        { role: "system", content: "You are a highly intelligent AI assistant with memory. Be helpful, accurate, and conversational." },
+        { role: "system", content: IDENTITY + "\nYou remember the earlier messages of this conversation. Be helpful, accurate and conversational." },
         ...history,
         { role: "user", content: text },
       ],
@@ -149,7 +155,7 @@ bmbtz({ nomCom: "aicode", alias: ["codeai", "gencode"], categorie: "AI", reactio
     const code = await groq.chat({
       models: groq.smartModels(),
       messages: [
-        { role: "system", content: `You are an expert ${language} programmer. Generate clean, working code with no markdown formatting, no backticks, no explanations — just the raw code. Output ONLY the code itself.` },
+        { role: "system", content: `${IDENTITY}\nYou are an expert ${language} programmer. Generate clean, working code with no markdown formatting, no backticks, no explanations — just the raw code. Output ONLY the code itself.` },
         { role: "user", content: prompt },
       ],
       max_tokens: 1500,
@@ -188,7 +194,7 @@ bmbtz({ nomCom: "vision", alias: ["analyze", "describe", "aiimg"], categorie: "A
     const prompt = (arg || []).join(" ").trim() || "Describe this image in detail. Be thorough but concise.";
     const result = await groq.chat({
       models: groq.visionModels(),
-      messages: [{ role: "user", content: [
+      messages: [{ role: "system", content: IDENTITY }, { role: "user", content: [
         { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } },
         { type: "text", text: prompt },
       ] }],
