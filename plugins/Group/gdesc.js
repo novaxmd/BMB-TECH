@@ -1,9 +1,9 @@
 const { bmbtz } = require("../../devbmb/bmbtz");
 
 bmbtz({ nomCom: "gdesc", alias: ["setgroupdesc", "groupdesc"], categorie: 'Group' }, async (dest, client, commandeOptions) => {
-  const { arg, repondre, verifAdmin } = commandeOptions;
+  const { arg, repondre, verifAdmin, superUser } = commandeOptions;
 
-  if (!verifAdmin) {
+  if (!(verifAdmin || superUser)) {
     repondre("⚠️ This command is for *group admins only*.");
     return;
   }
