@@ -49,7 +49,7 @@ bmbtz({ nomCom: "menu", alias: ["allmenu", "helplist"], categorie: "General" }, 
     });
 
     const modeValue = getCachedSettingsSync().MODE ?? s.MODE;
-    const mode = (modeValue || "").toLowerCase() === "on" ? "PUBLIC" : "PRIVATE";
+    const mode = require("../../lib/ownerAccess").modeLabel(modeValue);
     const ownerName = getCachedSettingsSync().OWNER_NAME ?? s.OWNER_NAME;
 
     // ===== HEADER =====
