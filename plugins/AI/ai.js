@@ -33,7 +33,7 @@ function textCommand({ nomCom, alias, title, system, usage, maxTokens = 1024, te
     }
     try {
       const reply = await groq.chat({
-        models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+        models: groq.fastModels(),
         messages: [{ role: "system", content: system }, { role: "user", content: text }],
         max_tokens: maxTokens,
         temperature,
@@ -109,7 +109,7 @@ bmbtz({ nomCom: "chat", alias: ["chatai", "talk"], categorie: "AI", reaction: "�
   try {
     const history = mem.getHistory(uid).slice(-10);
     const reply = await groq.chat({
-      models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+      models: groq.fastModels(),
       messages: [
         { role: "system", content: "You are a highly intelligent AI assistant with memory. Be helpful, accurate, and conversational." },
         ...history,
@@ -147,7 +147,7 @@ bmbtz({ nomCom: "aicode", alias: ["codeai", "gencode"], categorie: "AI", reactio
   const prompt = arg.slice(1).join(" ");
   try {
     const code = await groq.chat({
-      models: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+      models: groq.smartModels(),
       messages: [
         { role: "system", content: `You are an expert ${language} programmer. Generate clean, working code with no markdown formatting, no backticks, no explanations — just the raw code. Output ONLY the code itself.` },
         { role: "user", content: prompt },
@@ -187,7 +187,7 @@ bmbtz({ nomCom: "vision", alias: ["analyze", "describe", "aiimg"], categorie: "A
     const mime = img.mimetype || "image/jpeg";
     const prompt = (arg || []).join(" ").trim() || "Describe this image in detail. Be thorough but concise.";
     const result = await groq.chat({
-      models: ["meta-llama/llama-4-scout-17b-16e-instruct", "llama-3.2-90b-vision-preview", "llama-3.2-11b-vision-preview"],
+      models: groq.visionModels(),
       messages: [{ role: "user", content: [
         { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } },
         { type: "text", text: prompt },
@@ -292,15 +292,37 @@ bmbtz({ nomCom: "sora", alias: ["soraai", "genvideo", "aifilm"], categorie: "AI"
 
 // ---------------------------------------------------------------------
 // .aikeys - key status (owner only, keys are never shown in full)
+//   .aikeys        -> usage + cooldown status of every key
+//   .aikeys test   -> live check of every key against Groq + active models
 // ---------------------------------------------------------------------
 bmbtz({ nomCom: "aikeys", alias: ["keystatus", "groqkeys"], categorie: "AI", reaction: "🔑" }, async (dest, client, o) => {
-  const { ms, repondre, superUser } = o;
+  const { arg, ms, repondre, superUser } = o;
   if (!superUser) return repondre("*This command is only allowed to be controlled by the owner.👤*");
   const list = keys.getKeyStatus();
   if (!list.length) return repondre(box("🔑 *AI KEYS*", "No keys configured.\nAdd them in keys.js"));
+
+  if ((arg?.[0] || "").toLowerCase() === "test") {
+    await react(client, dest, ms, "⌛");
+    const results = await groq.testKeys();
+    const lines = results.map((r) =>
+      `${r.status === 200 ? "✅" : "❌"} #${r.index} ${r.key} | HTTP ${r.status || "network"}${r.error ? " (" + r.error + ")" : ""}`
+    );
+    const good = results.find((r) => r.status === 200);
+    const active = good ? good.ids : [];
+    const want = [groq.MODELS.fast, groq.MODELS.smart, groq.MODELS.vision, groq.MODELS.stt];
+    const modelLines = good
+      ? want.map((m) => `${active.includes(m) ? "✅" : "⚠️"} ${m}`)
+      : ["No working key, cannot check models."];
+    const okCount = results.filter((r) => r.status === 200).length;
+    await react(client, dest, ms, okCount ? "✅" : "❌");
+    return client.sendMessage(dest, {
+      text: box("🔑 *AI KEYS TEST*", `Working: ${okCount}/${results.length}\n${lines.join("\n")}\n\nModels:\n${modelLines.join("\n")}\n\n401/403 = key invalid or revoked\n429 = rate limited`),
+    }, { quoted: ms });
+  }
+
   const lines = list.map((k) =>
     `${k.ok ? "✅" : "⏳"} #${k.index} ${k.key}  | ok:${k.uses} fail:${k.fails}` +
     (k.ok ? "" : ` | back in ${k.resumesInSec}s (${k.lastError})`)
   );
-  await client.sendMessage(dest, { text: box("🔑 *AI KEYS*", `Total: ${list.length}\n${lines.join("\n")}`) }, { quoted: ms });
+  await client.sendMessage(dest, { text: box("🔑 *AI KEYS*", `Total: ${list.length}\n${lines.join("\n")}\n\nLive check: .aikeys test`) }, { quoted: ms });
 });
