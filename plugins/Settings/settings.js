@@ -21,6 +21,7 @@
 const { bmbtz } = require("../../devbmb/bmbtz");
 const { getCachedSettingsSync, updateCachedSetting } = require("../../lib/settingsCache");
 const s = require("../../settings");
+const ownerAccess = require("../../lib/ownerAccess");
 
 const NEWSLETTER_JID = "120363382023564830@newsletter";
 const NEWSLETTER_NAME = "B.M.B TECH OFFICIAL";
@@ -146,34 +147,44 @@ registerToggleCommand("alwaysonline", "ETAT", "1", "off", "ALWAYS ONLINE",
 // mode (public / private)
 bmbtz({
   nomCom: "mode",
+  alias: ["botmode", "setmode", "changemode"],
   categorie: "Settings"
 }, async (chatId, client, context) => {
-  const { ms, repondre, superUser, arg } = context;
+  const { ms, repondre, superUser, arg, prefixe } = context;
 
+  // Owner, creator (developer), the bot's own number and sudo users may switch the mode.
   if (!superUser) {
-    return repondre("*This command is only allowed to be controlled by the owner.👤");
+    return repondre("*This command is only allowed to be controlled by the owner.👤*");
   }
 
+  const current = ownerAccess.normalizeMode(getCachedSettingsSync().MODE ?? s.MODE);
+  const p = prefixe || ".";
+
   if (!arg[0]) {
-    const current = getCachedSettingsSync().MODE ?? s.MODE;
-    const help = `Current: *${current === 'on' ? 'public' : 'private'}*\n\n👉 Usage:\n- Type: *mode public*  → bot will reply to everyone\n- Type: *mode private* → bot will reply to owner/sudo only`;
+    const info = ownerAccess.MODE_INFO[current];
+    const help =
+      `Current: ${info.emoji} *${info.label}*\n${info.desc}\n\n` +
+      `👉 Usage:\n` +
+      `- *${p}mode public*  → everyone, everywhere\n` +
+      `- *${p}mode private* → owner / sudo only\n` +
+      `- *${p}mode group*   → groups only, DMs ignored\n` +
+      `- *${p}mode inbox*   → DMs only, groups ignored\n\n` +
+      `The owner can always use every command, in every mode.`;
     return sendBox(chatId, client, ms, "BOT MODE", help);
   }
 
-  const option = arg.join(" ").toLowerCase();
-
-  switch (option) {
-    case "public":
-      await updateCachedSetting("MODE", "on");
-      return sendBox(chatId, client, ms, "BOT MODE", "✅ Bot is now in *Public Mode* — it will reply to everyone.");
-
-    case "private":
-      await updateCachedSetting("MODE", "off");
-      return sendBox(chatId, client, ms, "BOT MODE", "🔒 Bot is now in *Private Mode* — it will reply to owner/sudo only.");
-
-    default:
-      return sendBox(chatId, client, ms, "BOT MODE", "❌ Invalid option.\nUse: *mode public* or *mode private*.");
+  const requested = ownerAccess.normalizeMode(arg[0]);
+  const known = ["public", "private", "group", "inbox", "on", "off", "groups", "dm", "pm", "yes", "no"];
+  if (!known.includes(String(arg[0]).toLowerCase())) {
+    return sendBox(chatId, client, ms, "BOT MODE", `❌ Invalid option.\nUse: *${p}mode public*, *${p}mode private*, *${p}mode group* or *${p}mode inbox*.`);
   }
+
+  const info = ownerAccess.MODE_INFO[requested];
+  if (requested === current) {
+    return sendBox(chatId, client, ms, "BOT MODE", `${info.emoji} Already in *${info.label}* mode.`);
+  }
+  await updateCachedSetting("MODE", info.stored);
+  return sendBox(chatId, client, ms, "BOT MODE", `${info.emoji} Bot is now in *${info.label}* mode.\n${info.desc}`);
 });
 
 //=============== SET PREFIX ===============//
