@@ -70,12 +70,15 @@ const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./lib
 const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = require("./lib/onlyAdmin");
 let { reagir } = require(__dirname + "/devbmb/app");
 const { getAllSudoNumbers } = require("./lib/sudo");
+const ownerAccess = require("./lib/ownerAccess");
 let cachedSudoNumbers = [];
 async function refreshSudoCache() {
     try { cachedSudoNumbers = await getAllSudoNumbers(); } catch (e) {}
 }
 refreshSudoCache();
 setInterval(refreshSudoCache, 30000);
+// .addsudo / .delsudo emit this event so the change applies immediately.
+process.on("bmb:sudo-changed", refreshSudoCache);
 var session = conf.session.replace(/BMB-TECH~/g,"");
 const prefixe = conf.PREFIXE;
 const more = String.fromCharCode(8206)
@@ -634,14 +637,23 @@ client.ev.on("messages.upsert", async (m) => {
 
             const DEV_NUMBER = '255767862457';
 
-            const ownerNum = (getConf('NUMERO_OWNER') || conf.NUMERO_OWNER || '').replace(/[^0-9]/g, '');
-            const superUserNumbers = [servBot, DEV_NUMBER, ownerNum]
-                .filter(Boolean)
-                .map((s) => s.replace(/[^0-9]/g, '') + "@s.whatsapp.net");
-            const allAllowedNumbers = superUserNumbers.concat(sudo);
-            const superUser = allAllowedNumbers.includes(auteurMessage);
+            // Owner detection (NOVA-XMD style): numbers are compared as plain digits, and
+            // "@lid" senders in groups are converted to their real phone number first.
+            // Owners: the bot's own number, the creator (DEV_NUMBER), every number in the
+            // OWNER_NUMBER / NUMERO_OWNER env vars (comma separated), and sudo users.
+            const senderResolved = ownerAccess.resolveSenderJid(auteurMessage, verifGroupe ? (infosGroupe?.participants || []) : []);
+            const access = ownerAccess.classifySender({
+                senderJid: senderResolved,
+                botJid: idBot,
+                botLid: client.user?.lid,
+                devNumber: DEV_NUMBER,
+                ownerNumbers: [getConf('NUMERO_OWNER'), conf.NUMERO_OWNER, process.env.OWNER_NUMBER],
+                sudoJids: sudo,
+            });
+            const superUser = access.superUser;
+            const fullOwner = access.fullOwner;
 
-            const dev = (DEV_NUMBER + "@s.whatsapp.net") === auteurMessage;
+            const dev = access.isDev;
             function repondre(mes) { client.sendMessage(origineMessage, { text: mes }, { quoted: ms }); }
             console.log("\t🌍BMB-TECH ONLINE🌍");
             console.log("=========== incoming message ===========");
@@ -695,7 +707,7 @@ function mybotpic() {
      return lienAleatoire;
   }
             var commandeOptions = {
-    superUser, dev,
+    superUser, dev, fullOwner, isSudo: access.isSudo,
     verifGroupe,
     mbre,
     membreGroupe,
@@ -1024,7 +1036,7 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
                 if (cd) {
                     try {
 
-            if ((getConf('MODE')).toLocaleLowerCase() != 'on' && !superUser) {
+            if (!superUser && ownerAccess.modeBlocks(getConf('MODE'), verifGroupe)) {
                 return;
             }
 
@@ -1038,7 +1050,7 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
                         if (req) { return }
             }
 
-            if(!verifAdmin && verifGroupe) {
+            if(!verifAdmin && !superUser && verifGroupe) {
                  let req = await isGroupOnlyAdmin(origineMessage);
                     
                         if (req) {  return }}
@@ -1174,16 +1186,7 @@ client.ev.on('group-participants.update', async (group) => {
                 const { loadPlugins } = require(__dirname + "/handlers/commandHandler");
                 loadPlugins(__dirname + "/plugins");
                 (0, baileys_1.delay)(700);
-                var md;
-                if ((getConf('MODE')).toLocaleLowerCase() === "on") {
-                    md = "public";
-                }
-                else if ((getConf('MODE')).toLocaleLowerCase() === "off") {
-                    md = "private";
-                }
-                else {
-                    md = "undefined";
-                }
+                const md = ownerAccess.modeLabel(getConf('MODE')).toLowerCase();
                 console.log("Commands Installation Completed ✅");
 
                 await activateCrons();
