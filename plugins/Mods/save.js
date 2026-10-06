@@ -3,7 +3,7 @@ let { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
 bmbtz({
     nomCom: "save",
-    alias: ["grab", "dm", "ok", "❤️", "🥰", "viewdm", "keep"],
+    alias: ["grab", "dm", "ok", "😂", "🤗", "😡", "😁", "❤️", "🥰", "viewdm", "keep"],
     categorie: "Mods"
 }, async (dest, client, commandeOptions) => {
     const { repondre, msgRepondu, superUser, auteurMessage } = commandeOptions;
