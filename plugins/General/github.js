@@ -19,7 +19,7 @@ bmbtz({
     nomCom: "github",
     alias: ["gh", "ghinfo"],
     categorie: "General",
-    reaction: "👽"
+    reaction: "🔄"
 }, async (dest, client, commandeOptions) => {
     const { ms, repondre, arg, prefixe } = commandeOptions;
 
