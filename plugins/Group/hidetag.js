@@ -1,7 +1,7 @@
 const { bmbtz } = require("../../devbmb/bmbtz");
 let { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
-bmbtz({ nomCom: "hidetag", alias: ["htag", "announce"], categorie: 'Group', reaction: "🎤" }, async (dest, client, commandeOptions) => {
+bmbtz({ nomCom: "tag", alias: ["hidetag", "announce"], categorie: 'Group', reaction: "🎤" }, async (dest, client, commandeOptions) => {
   const { repondre, msgRepondu, verifGroupe, arg, verifAdmin, superUser } = commandeOptions;
 
   if (!verifGroupe) return repondre("🚫 *This command is allowed only in groups.*");
