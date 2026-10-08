@@ -1,6 +1,6 @@
 const { bmbtz } = require("../../devbmb/bmbtz");
 
-bmbtz({ nomCom: "tagall", alias: ["everyone", "tagmembers"], categorie: 'Group', reaction: "📣" }, async (dest, client, commandeOptions) => {
+bmbtz({ nomCom: "tagall", alias: ["everyone", "all", "tagmembers"], categorie: 'Group', reaction: "📣" }, async (dest, client, commandeOptions) => {
 
   const {
     ms,
