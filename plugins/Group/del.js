@@ -24,8 +24,8 @@ const idsOf = (p) =>
   [p && p.id, p && p.lid, p && p.jid, p && p.phoneNumber, p && p.phone_number].filter(Boolean).map(d).filter(Boolean);
 
 bmbtz({
-  nomCom: "del",
-  alias: ["delete", "clear"],
+  nomCom: "delele",
+  alias: ["del", "clear"],
   categorie: "Group",
   reaction: "🧹",
 }, async (dest, client, o) => {
