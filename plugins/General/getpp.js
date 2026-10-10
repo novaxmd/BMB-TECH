@@ -1,6 +1,7 @@
 const { bmbtz } = require('../../devbmb/bmbtz');
 const s = require("../../settings");
 const fs = require('fs');
+const ownerAccess = require('../../lib/ownerAccess');
 
 // VCard Contact
 const quotedContact = {
@@ -17,7 +18,7 @@ const quotedContact = {
   }
 };
 
-// Context ya newsletter
+// Context of the newsletter
 const contextInfo = {
   forwardingScore: 999,
   isForwarded: true,
@@ -66,7 +67,7 @@ bmbtz({
       if (err) console.error("Cleanup failed:", err);
     });
 
-    // Success message na box
+    // Success message in a box
     const successMsg = `┏━━━━━━━━━━━━━━━━━━
 ┃ ✅ *Profile Picture Updated!*
 ┃ 👤 *User:* @${userJid.split('@')[0]}
@@ -81,48 +82,104 @@ bmbtz({
   }
 });
 
+/**
+ * Works out whose profile picture was asked for. First match wins:
+ *   1. a phone number typed after the command      .getpp 254746277449
+ *   2. someone mentioned in the message            .getpp @user
+ *   3. the author of the message you replied to    (reply) .getpp
+ *   4. the other person of the private chat you are in   .getpp   (inside a DM)
+ */
+async function findTarget(client, o) {
+  const { arg, dest, verifGroupe, mentionedJid, msgRepondu, auteurMsgRepondu, mbre } = o;
+
+  // 1. typed number (spaces, +, dashes and brackets are ignored)
+  const typed = ownerAccess.digits((arg || []).join(''));
+  if (typed.length >= 7) {
+    if (typed.length > 15) return { error: "That number is too long. Please check it and try again." };
+    if (typed.startsWith('0')) {
+      return { error: "Please write the number with the country code and without 0 at the start.\nExample: .getpp 254746277449" };
+    }
+    let jid = typed + '@s.whatsapp.net';
+    try {
+      const found = await client.onWhatsApp(jid);
+      if (Array.isArray(found) && found.length && found[0].exists === false) {
+        return { error: `The number +${typed} is not on WhatsApp.` };
+      }
+      if (Array.isArray(found) && found[0] && found[0].jid) jid = found[0].jid;
+    } catch (e) { /* keep the plain number */ }
+    return { jid };
+  }
+
+  // 2. mention  3. reply
+  let jid = (Array.isArray(mentionedJid) && mentionedJid[0]) || (msgRepondu && auteurMsgRepondu) || '';
+
+  // 4. private chat: the other person
+  if (!jid && !verifGroupe && dest) jid = dest;
+
+  if (!jid) return { jid: '' };
+
+  // WhatsApp may give an @lid id; turn it into the real phone number when we can
+  try {
+    jid = await ownerAccess.resolveSenderAsync(client, jid, Array.isArray(mbre) ? mbre : [], !!verifGroupe);
+  } catch (e) { /* keep as is */ }
+  return { jid };
+}
+
 // GET PROFILE PICTURE
 bmbtz({
   nomCom: "getpp",
+  alias: ["pp", "profilepic"],
   categorie: "General",
   reaction: "📷",
 }, async (dest, client, commandeOptions) => {
-  const { ms, repondre, msgRepondu, auteurMsgRepondu, mybotpic } = commandeOptions;
-
-  if (!msgRepondu) {
-    return repondre(`❌ *Reply to someone's message to get their profile pic!*`);
-  }
+  const { repondre, mybotpic, prefixe } = commandeOptions;
 
   try {
+    const target = await findTarget(client, commandeOptions);
+
+    if (target.error) return repondre(`❌ *${target.error}*`);
+    if (!target.jid) {
+      const p = prefixe || ".";
+      return repondre(
+        `❌ *Tell me whose profile picture you want:*\n` +
+        `• ${p}getpp 254746277449\n` +
+        `• mention someone: ${p}getpp @user\n` +
+        `• reply to their message with ${p}getpp\n` +
+        `• or use ${p}getpp inside their private chat`
+      );
+    }
+
+    const user = target.jid;
+    const tag = '@' + user.split('@')[0].split(':')[0];
+
     // Loading message (normal)
-    await repondre(
-      `🔁 *Load..... @${auteurMsgRepondu.split("@")[0]}*`,
-      { mentions: [auteurMsgRepondu] }
-    );
+    await repondre(`🔁 *Load..... ${tag}*`, { mentions: [user] });
 
     let ppuser;
+    let hidden = false;
     try {
-      ppuser = await client.profilePictureUrl(auteurMsgRepondu, 'image');
+      ppuser = await client.profilePictureUrl(user, 'image');
     } catch {
+      hidden = true;
       ppuser = mybotpic();
       await repondre(
         `🚫 *Profile picture locked or not found!*  
 🖼️ *Showing bot profile instead...*`,
-        { mentions: [auteurMsgRepondu] }
+        { mentions: [user] }
       );
     }
 
     // Box style caption
     const captionBox = `┏━━━━━━━━━━━━━━━━━━
 ┃ 🖼️ *Profile Picture*
-┃ 👤 *User:* @${auteurMsgRepondu.split('@')[0]}
+┃ 👤 *User:* ${tag}
 ┃ 🤖 *Bot:* ${s.BOT}
 ┗━━━━━━━━━━━━━━━━━`;
 
     await client.sendMessage(dest, {
       image: { url: ppuser },
       caption: captionBox,
-      mentions: [auteurMsgRepondu],
+      mentions: [user],
       contextInfo
     }, { quoted: quotedContact });
 
