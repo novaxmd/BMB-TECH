@@ -71,6 +71,7 @@ const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = 
 let { reagir } = require(__dirname + "/devbmb/app");
 const { getAllSudoNumbers } = require("./lib/sudo");
 const ownerAccess = require("./lib/ownerAccess");
+const noPrefix = require("./lib/noPrefix");
 let cachedSudoNumbers = [];
 async function refreshSudoCache() {
     try { cachedSudoNumbers = await getAllSudoNumbers(); } catch (e) {}
@@ -700,8 +701,19 @@ client.ev.on("messages.upsert", async (m) => {
                     usedPrefix = ALL_PREFIXES.find((p) => texte.startsWith(p)) || null;
                 }
             }
-            const verifCom = !!usedPrefix;
-            const com = verifCom ? texte.slice(usedPrefix.length).trim().split(/ +/).shift().toLowerCase() : false;
+            // Commands typed WITHOUT a prefix ("menu" works like ".menu"). See lib/noPrefix.js for the rules.
+            let noPrefixCommand = '';
+            if (!usedPrefix && texte) {
+                noPrefixCommand = noPrefix.detect({
+                    text: texte, mtype, key: ms.key, commands: evt.cm,
+                    mode: noPrefix.resolveMode(getConf('NOPREFIX')),
+                    isGroup: verifGroupe, isAdmin: verifAdmin, superUser,
+                }) || '';
+            }
+            const verifCom = !!usedPrefix || !!noPrefixCommand;
+            const com = usedPrefix
+                ? texte.slice(usedPrefix.length).trim().split(/ +/).shift().toLowerCase()
+                : (noPrefixCommand || false);
            
          
             const lien = conf.URL.split(',')  
@@ -1033,7 +1045,8 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
             try {
                 require('./lib/chatbot').handleMessage({
                     client, ms, texte, mtype, origineMessage, auteurMessage,
-                    verifGroupe, idBot, superUser, commandeOptions
+                    verifGroupe, idBot, superUser, commandeOptions,
+                    isCommand: verifCom
                 }).catch((e) => console.log('❌ [CHATBOT]:', e.message));
             } catch (e) { console.log('❌ [CHATBOT load]:', e.message); }
 
