@@ -181,6 +181,52 @@ async function readAuthor(client, group) {
     return { jid, ids: [raw, group.authorPn, resolved].filter(Boolean) };
 }
 
+
+// ---------------------------------------------------------------------------
+// Default welcome / goodbye layout (used when no custom text was set with
+// .setwelcome / .setgoodbye). Header and lines are monospace, the details are
+// plain "emoji LABEL : value" rows.
+// ---------------------------------------------------------------------------
+const TICKS = '```';
+const RULE = TICKS + '========================' + TICKS;
+const row = (emoji, label, value) => `${emoji} ${label.padEnd(7, ' ')}: ${value}`;
+
+function shortDesc(desc) {
+    const text = String(desc || '').trim();
+    if (!text) return '';
+    return text.length > 350 ? text.slice(0, 350).trim() + '…' : text;
+}
+
+function buildWelcomeText({ userJid, groupName, groupDesc, date, time, count }) {
+    const about = shortDesc(groupDesc);
+    return [
+        `${TICKS}[ WELCOME ]${TICKS}`,
+        RULE,
+        row('👋', 'USER', `@${String(userJid).split('@')[0].split(':')[0]}`),
+        row('🏷️', 'GROUP', groupName),
+        row('👥', 'MEMBERS', count || '-'),
+        row('📅', 'DATE', date),
+        row('🕒', 'TIME', time),
+        row('🌐', 'WEB', 'bmbtech.zone.id'),
+        ...(about ? [`📝 ABOUT  :\n${about}`] : []),
+        RULE,
+    ].join('\n');
+}
+
+function buildGoodbyeText({ userJid, groupName, date, time, count }) {
+    return [
+        `${TICKS}[ GOODBYE ]${TICKS}`,
+        RULE,
+        row('👋', 'USER', `@${String(userJid).split('@')[0].split(':')[0]}`),
+        row('🏷️', 'GROUP', groupName),
+        row('👥', 'MEMBERS', count || '-'),
+        row('📅', 'DATE', date),
+        row('🕒', 'TIME', time),
+        row('🌐', 'WEB', 'bmbtech.zone.id'),
+        RULE,
+    ].join('\n');
+}
+
 /**
  * @param {import('@whiskeysockets/baileys').WASocket} client
  * @param {{ id: string, participants: any[], action: string, author?: any }} group
@@ -241,20 +287,10 @@ async function groupEvents(client, group) {
                     .replace(/{time}/g, time)
                     .replace(/{count}/g, String(metadata.participants?.length || ''));
             } else {
-                msg = `
-╭───────────────────────━⊷
-║𝗕.𝗠.𝗕-𝗧𝗘𝗖𝗛 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗚𝗥𝗢𝗨𝗣
-║════════════════════════
-║ɢʀᴏᴜᴘ ɴᴀᴍᴇ ${groupName}
-║════════════════════════
-║ᴅᴀᴛᴇ ʜᴇ ᴊᴏɪɴᴇᴅ ${date}
-║════════════════════════
-║ᴛʜᴇ ᴛɪᴍᴇ ʜᴇ ᴇɴᴛᴇʀᴇᴅ ${time}
-║════════════════════════
-║ Bmb web bmbtech.zone.id
-║════════════════════════
-║ ${groupDesc}
-╰──────────────────────━⊷`;
+                msg = buildWelcomeText({
+                    userJid: membres[0], groupName, groupDesc, date, time,
+                    count: String(metadata.participants?.length || ''),
+                });
             }
 
             try {
@@ -289,16 +325,10 @@ async function groupEvents(client, group) {
                     .replace(/{time}/g, time)
                     .replace(/{count}/g, String(metadata.participants?.length || ''));
             } else {
-                msg = `
-╭─────────────────────────━⊷
-║ɢᴏᴏᴅʙʏᴇ👋 @${membres[0].split("@")[0]}
-║════════════════════════
-║ᴛʜᴇ ᴛɪᴍᴇ ʜᴇ ʟᴇғᴛ ${time}
-║════════════════════════
-║ᴅᴀᴛᴇ ɪs ᴏᴜᴛ ${date}
-║════════════════════════
-║Bmb web bmbtech.zone.id
-╰──────────────────────────━⊷`;
+                msg = buildGoodbyeText({
+                    userJid: membres[0], groupName, date, time,
+                    count: String(metadata.participants?.length || ''),
+                });
             }
 
             try {
@@ -332,4 +362,4 @@ async function groupEvents(client, group) {
     }
 }
 
-module.exports = { groupEvents, buildProtector, autoPromoteOwners };
+module.exports = { groupEvents, buildProtector, autoPromoteOwners, buildWelcomeText, buildGoodbyeText };
