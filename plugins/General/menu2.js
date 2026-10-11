@@ -64,7 +64,7 @@ const CATEGORY_ORDER = [
   ["Mods", "🛠️"], ["Owner", "👑"],
 ];
 const MEDALS = ["🥇", "🥈", "🥉"];
-const RULE = "────────────────";
+const RULE = "───────────";
 // The whole menu is ALWAYS one message. With a picture it is sent as the caption while it fits
 // (WhatsApp accepts long captions); a longer menu is sent as one plain text message instead.
 // Safety valve: set the MENU_CAPTION_LIMIT env var (for example 1000, or 0 for "never with a picture")
@@ -108,20 +108,20 @@ function buildHeader({ botName, version, owner, mode, time, prefix, noPrefixOn, 
     `│ 👤 Owner: ${owner}`,
     `│ 🌐 Mode: ${mode}`,
     `│ ⏰ Time: ${time}`,
-    `│ ℹ️ Prefix: ${prefix}${noPrefixOn ? "  (or no prefix)" : ""}`,
+    `│ ℹ️ Prefix: \( {prefix} \){noPrefixOn ? "  (or no prefix)" : ""}`,
     `│ 📊 Commands: ${total}`,
     `└${RULE}`,
   ];
   if (top && top.length) {
     lines.push("", "🔥 TOP COMMANDS:");
-    top.forEach((t, i) => lines.push(`${MEDALS[i] || "🏅"} ${prefix}${t.name} • ${t.uses} ${t.uses === 1 ? "use" : "uses"}`));
+    top.forEach((t, i) => lines.push(`${MEDALS[i] || "🏅"} \( {prefix} \){t.name} • ${t.uses} ${t.uses === 1 ? "use" : "uses"}`));
   }
   return lines.join("\n");
 }
 
 function buildSection({ name, icon }, names, prefix) {
-  const lines = [`${icon} ${name.toUpperCase()}`, `┌${RULE}`];
-  names.forEach((cmd, i) => lines.push(`${i === names.length - 1 ? "└" : "├"}─✔️ ${prefix}${cmd}`));
+  const lines = [`${icon} \( {name.toUpperCase()}`, `┌ \){RULE}`];
+  names.forEach((cmd, i) => lines.push(`${i === names.length - 1 ? "└" : "├"}─✔️ \( {prefix} \){cmd}`));
   return lines.join("\n");
 }
 
@@ -183,7 +183,7 @@ bmbtz({
     version: BOT_VERSION,
     owner: s.OWNER_NAME,
     mode: ownerAccess.modeLabel(settings.MODE !== undefined ? settings.MODE : s.MODE),
-    time: moment().tz(process.env.TZ || "Africa/Nairobi").format("HH:mm"),
+    time: moment().tz(process.env.TZ || "Africa/Dar_es_Salaam").format("HH:mm"),
     prefix,
     noPrefixOn: noPrefix.resolveMode(settings.NOPREFIX) !== "off",
     top: cmdStats.top(3),
