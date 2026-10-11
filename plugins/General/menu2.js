@@ -175,7 +175,7 @@ async function sendFirst(client, dest, caption, mybotpic) {
 
 // ====== MAIN COMMAND ======
 bmbtz({
-  nomCom: "menu1",
+  nomCom: "menu",
   categorie: "General",
   reaction: "🌚",
 }, async (dest, client, commandeOptions) => {
