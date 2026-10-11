@@ -72,6 +72,7 @@ let { reagir } = require(__dirname + "/devbmb/app");
 const { getAllSudoNumbers } = require("./lib/sudo");
 const ownerAccess = require("./lib/ownerAccess");
 const noPrefix = require("./lib/noPrefix");
+const cmdStats = require("./lib/cmdStats");
 let cachedSudoNumbers = [];
 async function refreshSudoCache() {
     try { cachedSudoNumbers = await getAllSudoNumbers(); } catch (e) {}
@@ -185,6 +186,14 @@ async function main() {
             }
         };
         const client = (0, baileys_1.default)(sockOptions);
+// Remembers the IDs of the messages this bot sends, so a message typed by a person on the bot's own
+// account can run as a command without the bot ever triggering itself. See lib/ownMessageGuard.js.
+const ownGuard = require('./lib/ownMessageGuard').install(
+    client,
+    typeof baileys_1.generateMessageID === 'function'
+        ? baileys_1.generateMessageID
+        : (typeof baileys_1.generateMessageIDV2 === 'function' ? () => baileys_1.generateMessageIDV2(client.user && client.user.id) : null)
+);
 store.bind(client.ev);
 
 if (client.signalRepository?.lidMapping?.on) {
@@ -707,7 +716,8 @@ client.ev.on("messages.upsert", async (m) => {
                 noPrefixCommand = noPrefix.detect({
                     text: texte, mtype, key: ms.key, commands: evt.cm,
                     mode: noPrefix.resolveMode(getConf('NOPREFIX')),
-                    isGroup: verifGroupe, isAdmin: verifAdmin, superUser,
+                    isGroup: verifGroupe, superUser,
+                    ownMessageAllowed: !!ms.key.fromMe && ownGuard.isTypedByHuman(ms.key.id),
                 }) || '';
             }
             const verifCom = !!usedPrefix || !!noPrefixCommand;
@@ -1085,6 +1095,7 @@ if (getConf('AUTO_READ') === 'on' && !ms.key.fromMe) {
                 } 
 
                         reagir(origineMessage, client, ms, cd.reaction);
+                        try { cmdStats.hit(cd.nomCom); } catch (e) { /* stats are optional */ }
                         cd.fonction(origineMessage, client, commandeOptions);
                     }
                     catch (e) {
