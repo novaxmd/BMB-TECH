@@ -64,8 +64,14 @@ const CATEGORY_ORDER = [
   ["Mods", "🛠️"], ["Owner", "👑"],
 ];
 const MEDALS = ["🥇", "🥈", "🥉"];
-const RULE = "──────────────────────────";
-const MAX_MESSAGE_CHARS = 3000;
+const RULE = "────────────────";
+// The whole menu is ALWAYS one message. With a picture it is sent as the caption while it fits
+// (WhatsApp accepts long captions); a longer menu is sent as one plain text message instead.
+// Safety valve: set the MENU_CAPTION_LIMIT env var (for example 1000, or 0 for "never with a picture")
+// if your WhatsApp ever refuses a long picture caption. The menu stays ONE message either way.
+const CAPTION_LIMIT = process.env.MENU_CAPTION_LIMIT !== undefined && !Number.isNaN(Number(process.env.MENU_CAPTION_LIMIT))
+  ? Number(process.env.MENU_CAPTION_LIMIT)
+  : 4000;
 
 /** Map of category name -> sorted list of command names. */
 function groupCommands(commands) {
@@ -115,28 +121,13 @@ function buildHeader({ botName, version, owner, mode, time, prefix, noPrefixOn, 
 
 function buildSection({ name, icon }, names, prefix) {
   const lines = [`${icon} ${name.toUpperCase()}`, `┌${RULE}`];
-  names.forEach((cmd, i) => lines.push(`${i === names.length - 1 ? "└" : "├"}──✔️ ${prefix}${cmd}`));
+  names.forEach((cmd, i) => lines.push(`${i === names.length - 1 ? "└" : "├"}─✔️ ${prefix}${cmd}`));
   return lines.join("\n");
 }
 
-/**
- * Splits header + sections into messages of at most `limit` characters.
- * A category is never cut in half (unless one category alone is longer than the limit).
- */
-function splitMessages(header, sections, limit = MAX_MESSAGE_CHARS) {
-  const messages = [];
-  let current = header;
-  for (const section of sections) {
-    const candidate = current ? `${current}\n\n${section}` : section;
-    if (candidate.length <= limit || !current) {
-      current = candidate;
-    } else {
-      messages.push(current);
-      current = section;
-    }
-  }
-  if (current) messages.push(current);
-  return messages;
+/** Header and all sections as ONE text. */
+function joinMenu(header, sections) {
+  return [header, ...sections].join("\n\n");
 }
 
 function buildMenuMessages({ commands, prefix, info, only }) {
@@ -149,28 +140,31 @@ function buildMenuMessages({ commands, prefix, info, only }) {
   }
   const header = buildHeader({ ...info, total: (commands || []).length });
   const sections = categories.map((c) => buildSection(c, groups.get(c.name), prefix));
-  return { messages: splitMessages(header, sections), categories: categories.map((c) => c.name), available: orderedCategories(groups).map((c) => c.name) };
+  const text = joinMenu(header, sections);
+  return { text, messages: [text], categories: categories.map((c) => c.name), available: orderedCategories(groups).map((c) => c.name) };
 }
 
 // ====== SENDING ======
-/** First message: random picture from /scs, else the bot picture link, else plain text. */
-async function sendFirst(client, dest, caption, mybotpic) {
-  const imagePath = getRandomScsImage();
-  if (imagePath) {
+/** Sends the menu as ONE message: picture + caption while it fits, otherwise plain text. */
+async function sendMenu(client, dest, text, mybotpic) {
+  if (text.length <= CAPTION_LIMIT) {
+    const imagePath = getRandomScsImage();
+    if (imagePath) {
+      try {
+        const buffer = fs.readFileSync(imagePath);
+        const isVideo = /\.(mp4|gif)$/i.test(imagePath);
+        const content = isVideo
+          ? { video: buffer, caption: text, gifPlayback: true, contextInfo }
+          : { image: buffer, caption: text, contextInfo };
+        return await client.sendMessage(dest, content, { quoted: quotedContact });
+      } catch (e) { /* try the next option */ }
+    }
     try {
-      const buffer = fs.readFileSync(imagePath);
-      const isVideo = /\.(mp4|gif)$/i.test(imagePath);
-      const content = isVideo
-        ? { video: buffer, caption, gifPlayback: true, contextInfo }
-        : { image: buffer, caption, contextInfo };
-      return await client.sendMessage(dest, content, { quoted: quotedContact });
-    } catch (e) { /* try the next option */ }
+      const url = typeof mybotpic === "function" ? mybotpic() : "";
+      if (url) return await client.sendMessage(dest, { image: { url }, caption: text, contextInfo }, { quoted: quotedContact });
+    } catch (e) { /* try plain text */ }
   }
-  try {
-    const url = typeof mybotpic === "function" ? mybotpic() : "";
-    if (url) return await client.sendMessage(dest, { image: { url }, caption, contextInfo }, { quoted: quotedContact });
-  } catch (e) { /* try plain text */ }
-  return client.sendMessage(dest, { text: caption, contextInfo }, { quoted: quotedContact });
+  return client.sendMessage(dest, { text, contextInfo }, { quoted: quotedContact });
 }
 
 // ====== MAIN COMMAND ======
@@ -196,16 +190,13 @@ bmbtz({
   };
 
   const only = arg && arg[0] ? arg[0] : "";
-  const { messages, categories, available } = buildMenuMessages({ commands: cm, prefix, info, only });
+  const { text, categories, available } = buildMenuMessages({ commands: cm, prefix, info, only });
 
   if (only && !categories.length) {
     return repondre(`❌ No category called "${only}".\nAvailable: ${available.join(", ")}`);
   }
 
-  await sendFirst(client, dest, messages[0], mybotpic);
-  for (const text of messages.slice(1)) {
-    await client.sendMessage(dest, { text, contextInfo });
-  }
+  await sendMenu(client, dest, text, mybotpic);
 });
 
-module.exports = { buildMenuMessages, buildHeader, buildSection, splitMessages, groupCommands, orderedCategories };
+module.exports = { buildMenuMessages, buildHeader, buildSection, joinMenu, groupCommands, orderedCategories, CAPTION_LIMIT };
