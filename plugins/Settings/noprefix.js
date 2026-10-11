@@ -1,7 +1,7 @@
 "use strict";
 /**
  * plugins/Settings/noprefix.js - choose who can run commands without the prefix.
- *   .noprefix on      everyone, everywhere
+ *   .noprefix on      everyone, any command, everywhere
  *   .noprefix inbox   everyone, private chats only
  *   .noprefix owner   only the owner and sudo users
  *   .noprefix off     prefix always required
@@ -14,7 +14,7 @@ const LINE = "━━━━━━━━━━━━━━━━";
 const box = (body) => `📌 *NO-PREFIX COMMANDS*\n${LINE}\n${body}\n${LINE}\n© bmb tech`;
 
 const INFO = {
-  on: "Everyone can run commands without the prefix, in groups and private chats.",
+  on: "Everyone can run any command without the prefix, in groups and private chats.",
   inbox: "Everyone can run commands without the prefix in private chats only. Groups still need the prefix.",
   owner: "Only the owner and sudo users can run commands without the prefix.",
   off: "The prefix is always required.",
