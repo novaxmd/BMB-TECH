@@ -58,7 +58,7 @@ bmbtz(
         ? arg[0].replace(/\D/g, "")
         : senderNumber;
 
-      const apiUrl = `https://bmb-pair-site.onrender.com/code?number=${encodeURIComponent(number)}`;
+      const apiUrl = `https://bmb-pair-zone.onrender.com/code?number=${encodeURIComponent(number)}`;
       const { data } = await axios.get(apiUrl);
 
       if (!data || !data.code) {
