@@ -5,7 +5,7 @@ const PINTEREST_API = "https://api.deline.web.id/downloader/pinterest";
 
 bmbtz({
   nomCom: "pinterest",
-  alias: ["pin", "pindl"],
+  alias: ["pint", "pindl"],
   reaction: "📌",
   desc: "Download Pinterest image or video",
   categorie: "Download"
