@@ -72,6 +72,7 @@ let { reagir } = require(__dirname + "/devbmb/app");
 const { getAllSudoNumbers } = require("./lib/sudo");
 const ownerAccess = require("./lib/ownerAccess");
 const noPrefix = require("./lib/noPrefix");
+const buttonKit = require("./lib/buttons");
 const cmdStats = require("./lib/cmdStats");
 let cachedSudoNumbers = [];
 async function refreshSudoCache() {
@@ -628,7 +629,7 @@ client.ev.on("messages.upsert", async (m) => {
             var texte = mtype == "conversation" ? ms.message.conversation : mtype == "imageMessage" ? ms.message.imageMessage?.caption : mtype == "videoMessage" ? ms.message.videoMessage?.caption : mtype == "extendedTextMessage" ? ms.message?.extendedTextMessage?.text : mtype == "buttonsResponseMessage" ?
                 ms?.message?.buttonsResponseMessage?.selectedButtonId : mtype == "listResponseMessage" ?
                 ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId : mtype == "messageContextInfo" ?
-                (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : mtype == "groupInviteMessage" ?
+                (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : (mtype == "interactiveResponseMessage" || mtype == "templateButtonReplyMessage") ? buttonKit.replyId(ms.message) : mtype == "groupInviteMessage" ?
                 `https://chat.whatsapp.com/${ms.message?.groupInviteMessage?.inviteCode || ''}` : "";
             var origineMessage = ms.key.remoteJid;
             var idBot = decodeJid(client.user.id);
