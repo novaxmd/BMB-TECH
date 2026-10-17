@@ -72,7 +72,9 @@ let { reagir } = require(__dirname + "/devbmb/app");
 const { getAllSudoNumbers } = require("./lib/sudo");
 const ownerAccess = require("./lib/ownerAccess");
 const noPrefix = require("./lib/noPrefix");
-const buttonKit = require("./lib/buttons");
+// Tapped buttons are read with lib/buttons.js. The bot still starts if that file is missing (taps just do nothing).
+let buttonKit = { replyId: () => "" };
+try { buttonKit = require("./lib/buttons"); } catch (e) { console.log("⚠️ lib/buttons.js is missing - button taps will not work until it is uploaded."); }
 const cmdStats = require("./lib/cmdStats");
 let cachedSudoNumbers = [];
 async function refreshSudoCache() {
