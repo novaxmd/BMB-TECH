@@ -5,7 +5,19 @@ const {
   setWarnMode, getWarnMode,
 } = require("../../lib/antilien");
 const ownerAccess = require("../../lib/ownerAccess");
-const buttons = require("../../lib/buttons");
+
+// If lib/buttons.js was not uploaded, the command must still answer (with plain text instead of buttons).
+let buttons;
+try {
+  buttons = require("../../lib/buttons");
+} catch (e) {
+  console.log("⚠️ [antilink] lib/buttons.js is missing - upload it to get the buttons. Using plain text for now.");
+  buttons = {
+    boldFont: (t) => String(t),
+    sendButtons: async (client, jid, { body, buttons: list = [] }) =>
+      client.sendMessage(jid, { text: `${body}\n\nType one of these:\n${list.map((b) => "• " + b.id).join("\n")}` }),
+  };
+}
 
 /**
  * antilink - with buttons (the same button style as the Toxic-MD menu)
@@ -32,7 +44,7 @@ const FRAME_TOP = (t) => `╭───❰ *${t}* ❱───╮`;
 const FRAME_BOTTOM = "╰──────────────────────────╯";
 
 bmbtz({ nomCom: "antilink", alias: ["antilinks"], categorie: 'Group', reaction: "🔗" }, async (dest, client, commandeOptions) => {
-  var { repondre, arg, verifGroupe, superUser, verifAdmin, prefixe, mybotpic, mbre, auteurMessage, senderJid } = commandeOptions;
+  var { repondre, arg, verifGroupe, superUser, verifAdmin, prefixe, mbre, auteurMessage, senderJid } = commandeOptions;
   const p = prefixe || ".";
 
   if (!verifGroupe) return repondre("🚫 *This command works in groups only.*");
@@ -44,16 +56,13 @@ bmbtz({ nomCom: "antilink", alias: ["antilinks"], categorie: 'Group', reaction: 
     return repondre("🚫 *Only group admins or super users can use this command.*");
   }
 
-  const sendCard = async (body, buttonList) => {
-    const thumbnail = await buttons.defaultThumbnail(mybotpic);
-    return buttons.sendButtons(client, dest, {
+  const sendCard = (body, buttonList) =>
+    buttons.sendButtons(client, dest, {
       body,
       footer: "Antilink • BMB-TECH",
       title: "ANTILINK",
-      thumbnail,
       buttons: buttonList,
     });
-  };
 
   try {
     const sub = (arg && arg[0] || '').toLowerCase();
@@ -111,7 +120,7 @@ bmbtz({ nomCom: "antilink", alias: ["antilinks"], categorie: 'Group', reaction: 
     // .antilink on  -> ask what should happen to a link (buttons: Delete / Remove)
     if (sub === 'on') {
       return sendCard(
-`${FRAME_TOP("ANTILINK · MODE")}\n│ What should happen when a\n│ member sends a link?\n│\n│ 🗑️ *Delete* - the link is deleted\n│ 🚫 *Remove* - the link is deleted\n│    and the member is removed\n│\n│ Choose an option below.\n${FRAME_BOTTOM}`,
+`${FRAME_TOP("ANTILINK · MODE")}\n│ What should happen when a\n│ member sends a link?\n│\n│ 🗑️ *Delete* - the link is deleted\n│ 🚫 *Remove* - the link is deleted\n│    and the member is removed\n│\n│ Choose an option below, or type:\n│ ${p}antilink delete\n│ ${p}antilink remove\n${FRAME_BOTTOM}`,
         [
           { text: buttons.boldFont("Antilink Delete"), id: `${p}antilink delete` },
           { text: buttons.boldFont("Antilink Remove"), id: `${p}antilink remove` },
@@ -126,7 +135,7 @@ bmbtz({ nomCom: "antilink", alias: ["antilinks"], categorie: 'Group', reaction: 
     const action = !masterOn ? '-' : removeOn ? 'Delete + Remove' : warnOn ? 'Delete + Warn' : 'Delete only';
 
     return sendCard(
-`${FRAME_TOP("ANTILINK")}\n│ Status : ${masterOn ? 'ON ✅' : 'OFF ❌'}\n│ Action : ${action}\n│\n│ Choose an option below.\n│\n│ Extra: ${p}antilink warn on/off\n${FRAME_BOTTOM}`,
+`${FRAME_TOP("ANTILINK")}\n│ Status : ${masterOn ? 'ON ✅' : 'OFF ❌'}\n│ Action : ${action}\n│\n│ Choose an option below, or type:\n│ ${p}antilink on\n│ ${p}antilink off\n│\n│ Extra: ${p}antilink warn on/off\n${FRAME_BOTTOM}`,
       [
         { text: buttons.boldFont("Antilink On"), id: `${p}antilink on` },
         { text: buttons.boldFont("Antilink Off"), id: `${p}antilink off` },
