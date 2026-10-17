@@ -65,7 +65,7 @@ const CATEGORY_ORDER = [
   ["Mods", "🛠️"], ["Owner", "👑"],
 ];
 const MEDALS = ["🥇", "🥈", "🥉"];
-const RULE = "──────────────────────────";
+const RULE = "───────────";
 // The whole menu is ALWAYS one message. With a picture it is sent as the caption while it fits
 // (WhatsApp accepts long captions); a longer menu is sent as one plain text message instead.
 // Safety valve: set the MENU_CAPTION_LIMIT env var (for example 1000, or 0 for "never with a picture")
@@ -122,7 +122,7 @@ function buildHeader({ botName, version, owner, mode, time, prefix, noPrefixOn, 
 
 function buildSection({ name, icon }, names, prefix) {
   const lines = [`${icon} ${name.toUpperCase()}`, `┌${RULE}`];
-  names.forEach((cmd, i) => lines.push(`${i === names.length - 1 ? "└" : "├"}──✔️ ${prefix}${cmd}`));
+  names.forEach((cmd, i) => lines.push(`${i === names.length - 1 ? "└" : "├"}─✔️ ${prefix}${cmd}`));
   return lines.join("\n");
 }
 
@@ -178,8 +178,7 @@ try {
 } catch (e) { /* the check is optional */ }
 
 bmbtz({
-  nomCom: "menu1",
-  alias: ["allmenu", "fullmenu"],
+  nomCom: "menu",
   categorie: "General",
   reaction: "🌚",
 }, async (dest, client, commandeOptions) => {
