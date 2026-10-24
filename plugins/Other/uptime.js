@@ -1,5 +1,7 @@
 const { bmbtz } = require("../../devbmb/bmbtz");
-const speed = require("performance-now");
+// Built into Node, so no extra package (performance-now) is needed.
+const { performance } = require("perf_hooks");
+const speed = () => performance.now();
 const os = require('os');
 
 // Function for delay simulation
