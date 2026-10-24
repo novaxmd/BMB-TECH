@@ -50,3 +50,16 @@
         <img alt="Zip File" src="https://img.shields.io/badge/downlod-100000?style=for-the-badge&logo=scan&logoColor=white&labelColor=darkorange&color=darkorange"/>
     </a>
 </p>
+
+
+
+
+
+## 🛠️ **Configuration**
+
+After deployment, configure these variables:
+
+```env
+SESSION_ID=your-session-id-here
+BOT_NAME= BMB TECH
+OWNER_NUMBER=255767862457
