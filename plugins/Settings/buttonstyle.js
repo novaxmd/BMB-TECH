@@ -3,8 +3,8 @@
  * plugins/Settings/buttonstyle.js - choose how the buttons look (owner only).
  *
  *   .buttonstyle           shows the style in use
- *   .buttonstyle toxic     separate rounded buttons, like the Toxic-MD menu (default)
- *   .buttonstyle native    buttons stuck to the message, with a small reply arrow
+ *   .buttonstyle native    buttons stuck to the message, with a small reply arrow (default, shows everywhere)
+ *   .buttonstyle toxic     separate rounded buttons, like the Toxic-MD menu (send .buttonstyle test to check it shows)
  *   .buttonstyle text      no buttons, the commands are listed instead
  *   .buttonstyle test      sends a sample message with two buttons in the style in use
  *
@@ -40,7 +40,7 @@ bmbtz({
     return repondre(box("BUTTON STYLE",
       `Current: *${current.toUpperCase()}*\n${INFO[current]}\n\n` +
       `${p}buttonstyle toxic\n${p}buttonstyle native\n${p}buttonstyle text\n${p}buttonstyle test\n\n` +
-      `If you can not see the buttons, try another style.`));
+      `If you can not see a card at all, send ${p}buttonstyle native.`));
   }
 
   if (wanted === "test") {
