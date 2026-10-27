@@ -3,10 +3,10 @@ const { bmbtz } = require("../../devbmb/bmbtz");
 /**
  * owner
  *
- * Ported from NOVA-XMD's plugins/General/dev.js (aliased there as
+ * Ported from BMB-TECH's plugins/General/dev.js (aliased there as
  * 'owner' among others) — replaces BMB-TECH's previous owner.js.
  * Sends an interactive card (title/body/footer + buttons) via
- * relayMessage, followed by a vCard contact, matching NOVA-XMD's exact
+ * relayMessage, followed by a vCard contact, matching BMB-TECH's exact
  * output. Falls back to a plain text card + vCard if the interactive
  * message fails to send (e.g. unsupported on the recipient's client).
  */

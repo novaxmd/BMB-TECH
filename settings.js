@@ -3,7 +3,7 @@
  * settings.js
  *
  * Trimmed down to identity/deploy config plus sane starting DEFAULTS for
- * the toggle-style settings — matching NOVA-XMD's minimal config/settings.js
+ * the toggle-style settings — matching BMB-TECH's minimal config/settings.js
  * approach. The toggle settings below (ANTICALL, ANTIDELETE, MODE, etc.)
  * are only used as fallbacks now: once a command like .anticall or
  * .setprefix is used, the persisted value in the database (see

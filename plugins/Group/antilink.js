@@ -20,7 +20,7 @@ try {
 }
 
 /**
- * antilink - with buttons (the same button style as the Toxic-MD menu)
+ * antilink - with buttons (the same button style as the Bmb-Tech menu)
  *
  *   .antilink              -> status + buttons  [Antilink On] [Antilink Off]
  *   [Antilink On]          -> (.antilink on)     asks what to do:  [Antilink Delete] [Antilink Remove]

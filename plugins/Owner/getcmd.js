@@ -5,10 +5,10 @@ const path = require("path");
 /**
  * getcmd
  *
- * Ported from NOVA-XMD's plugins/Owner/getcmd.js. Fetches a plugin
+ * Ported from BMB-TECH's plugins/Owner/getcmd.js. Fetches a plugin
  * file's source code by command name (or alias) and sends it as a
  * document, restricted to the bot developer (dev) only — matching
- * NOVA-XMD's hardcoded DEVELOPER-only restriction.
+ * BMB-TECH's hardcoded DEVELOPER-only restriction.
  *
  * This replaces the previous BMB-TECH version, which searched a
  * "../scs" folder that no longer exists (the project moved to
@@ -17,7 +17,7 @@ const path = require("path");
  *
  * Category folders are read dynamically from plugins/ instead of a
  * hardcoded list, since BMB-TECH's category names (Group, Download,
- * Search, ...) don't match NOVA-XMD's (AI, Anime, Coding, ...).
+ * Search, ...) don't match BMB-TECH's (AI, Anime, Coding, ...).
  */
 const PLUGINS_DIR = path.join(__dirname, "..", "..", "plugins");
 
@@ -49,7 +49,7 @@ bmbtz({
 
     await client.sendMessage(dest, { react: { text: "🔍", key: ms.key } }).catch(() => {});
 
-    // Originally dev-only (matching NOVA-XMD's hardcoded DEVELOPER
+    // Originally dev-only (matching BMB-TECH's hardcoded DEVELOPER
     // restriction), but this is the bot's own owner/deployer asking to
     // see their own bot's source — reasonable to allow, so superUser
     // (owner/sudo) is granted access too, not just the fixed DEV_NUMBER.

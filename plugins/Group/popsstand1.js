@@ -12,7 +12,7 @@ const { getBinaryNodeChild, getBinaryNodeChildren } = require("@whiskeysockets/b
 
 // ADD COMMAND — moved to plugins/Group/add.js (fixed: was superUser-only
 // and used an invalid "settings" query type that silently failed against
-// current WhatsApp servers; the new version matches NOVA-XMD's working add.js)
+// current WhatsApp servers; the new version matches BMB-TECH's working add.js)
 
 
 // REJECT COMMAND

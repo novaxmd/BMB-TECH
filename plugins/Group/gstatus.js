@@ -4,7 +4,7 @@ const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 /**
  * gstatus
  *
- * Ported from NOVA-XMD's plugins/Groups/gstatus.js. Posts media (image,
+ * Ported from BMB-TECH's plugins/Groups/gstatus.js. Posts media (image,
  * video, audio) or plain text into a group as a "silent group status" —
  * a WhatsApp feature that shows the content the same way a status does
  * (contextInfo.isGroupStatus / statusSourceType / statusAttributions),

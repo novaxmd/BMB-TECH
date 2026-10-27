@@ -656,7 +656,7 @@ client.ev.on("messages.upsert", async (m) => {
 
             const DEV_NUMBER = '255767862457';
 
-            // Owner detection (NOVA-XMD style): numbers are compared as plain digits, and
+            // Owner detection (BMB-TECH style): numbers are compared as plain digits, and
             // "@lid" senders in groups are converted to their real phone number first.
             // Owners: the bot's own number, the creator (DEV_NUMBER), every number in the
             // OWNER_NUMBER / NUMERO_OWNER env vars (comma separated), and sudo users.

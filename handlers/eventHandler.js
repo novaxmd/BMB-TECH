@@ -56,7 +56,7 @@ async function resolveIfLid(client, jid) {
 
 
 // ---------------------------------------------------------------------------
-// Owner protection (same idea as NOVA-XMD)
+// Owner protection (same idea as BMB-TECH)
 //
 // Protected people: the bot itself, the creator, every owner number
 // (OWNER_NUMBER / NUMERO_OWNER), sudo users and the group's own creator.

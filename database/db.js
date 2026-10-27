@@ -2,10 +2,10 @@
 /**
  * database/db.js
  *
- * Unified storage for BMB-TECH, ported from NOVA-XMD's database/config.js
+ * Unified storage for BMB-TECH, ported from BMB-TECH's database/config.js
  * (originally ES Modules) to CommonJS.
  *
- * Backend selection (same fallback order as NOVA-XMD):
+ * Backend selection (same fallback order as BMB-TECH):
  *   - If process.env.DATABASE_URL is set, tries PostgreSQL first.
  *   - Otherwise (or if PostgreSQL fails to connect), falls back to a
  *     single JSON file (./bmbtech-data.json) — no setup required, so
@@ -15,7 +15,7 @@
  * This consolidates what used to be several separate JSON files
  * (lib/antibot.js, lib/antilien.js, lib/warn.js, lib/welcome.js,
  * lib/groupProtection.js) into one place, one group_settings row per
- * group, matching NOVA-XMD's schema/shape.
+ * group, matching BMB-TECH's schema/shape.
  */
 const path = require('path');
 const fs = require('fs');

@@ -1,6 +1,6 @@
 "use strict";
 /**
- * plugins/AI/ai.js - all BMB-TECH AI commands (ported from NOVA-XMD plugins/AI)
+ * plugins/AI/ai.js - all BMB-TECH AI commands (ported from BMB-TECH plugins/AI)
  *   gpt, chat, groq, gemini, vision, aicode, stt, imagine, sora, aikeys
  * All of them use keys.js through lib/groq.js (when one key dies, the next one takes over).
  */

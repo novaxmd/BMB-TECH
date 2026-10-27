@@ -1,0 +1,56 @@
+import type { IRatio } from '../type.js';
+export type StringEncoding = 'ascii' | 'utf8' | 'utf-16le' | 'utf-16be' | 'ucs2' | 'base64url' | 'latin1' | 'hex';
+export declare function getBit(buf: Uint8Array, off: number, bit: number): boolean;
+/**
+ * Find delimiting zero in uint8Array
+ * @param uint8Array Uint8Array to find the zero delimiter in
+ * @param encoding The string encoding used
+ * @return position in uint8Array where zero found, or uint8Array.length if not found
+ */
+export declare function findZero(uint8Array: Uint8Array, encoding?: StringEncoding): number;
+export declare function trimRightNull(x: string): string;
+/**
+ * Decode string
+ */
+export declare function decodeString(uint8Array: Uint8Array, encoding: StringEncoding): string;
+export declare function stripNulls(str: string): string;
+/**
+ * Read bit-aligned number start from buffer
+ * Total offset in bits = byteOffset * 8 + bitOffset
+ * @param source Byte buffer
+ * @param byteOffset Starting offset in bytes
+ * @param bitOffset Starting offset in bits: 0 = lsb
+ * @param len Length of number in bits
+ * @return Decoded bit aligned number
+ */
+export declare function getBitAllignedNumber(source: Uint8Array, byteOffset: number, bitOffset: number, len: number): number;
+/**
+ * Read bit-aligned number start from buffer
+ * Total offset in bits = byteOffset * 8 + bitOffset
+ * @param source Byte Uint8Array
+ * @param byteOffset Starting offset in bytes
+ * @param bitOffset Starting offset in bits: 0 = most significant bit, 7 is the least significant bit
+ * @return True if bit is set
+ */
+export declare function isBitSet(source: Uint8Array, byteOffset: number, bitOffset: number): boolean;
+export declare function a2hex(str: string): string;
+/**
+ * Convert power ratio to DB
+ * ratio: [0..1]
+ */
+export declare function ratioToDb(ratio: number): number;
+/**
+ * Convert dB to ratio
+ * db Decibels
+ */
+export declare function dbToRatio(dB: number): number;
+/**
+ * Convert replay gain to ratio and Decibel
+ * @param value string holding a ratio like '0.034' or '-7.54 dB'
+ */
+export declare function toRatio(value: string): IRatio | undefined;
+/**
+ * Decode a big-endian unsigned integer from a Uint8Array.
+ * Supports dynamic length (1–8 bytes).
+ */
+export declare function decodeUintBE(uint8Array: Uint8Array): number;

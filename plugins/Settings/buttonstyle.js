@@ -5,7 +5,7 @@
  *   .buttonstyle           shows the style in use
  *   .buttonstyle try       sends one sample card per style, each with its name - look at them and pick
  *   .buttonstyle native    buttons stuck to the message, with a small reply arrow (default, shows everywhere)
- *   .buttonstyle toxic     separate rounded buttons like the Toxic-MD menu (our own <biz> node)
+ *   .buttonstyle toxic     separate rounded buttons like the Bmb-Tech menu (our own <biz> node)
  *   .buttonstyle wrapped   separate rounded buttons, wrapped so the library adds no second <biz> node
  *   .buttonstyle legacy    separate rounded buttons, sent with the library's own buttons API
  *   .buttonstyle text      no buttons, the commands are listed instead
@@ -22,7 +22,7 @@ const box = (title, body) => `📌 *${title}*\n${LINE}\n${body}\n${LINE}\n© bmb
 
 const INFO = {
   native: "Buttons stuck to the message, with a small reply arrow. Known to show.",
-  toxic: "Separate rounded buttons like the Toxic-MD menu (our own <biz> node).",
+  toxic: "Separate rounded buttons like the Bmb-Tech menu (our own <biz> node).",
   wrapped: "Separate rounded buttons, wrapped so the library adds no second <biz> node.",
   legacy: "Separate rounded buttons, sent with the library's own buttons API.",
   text: "No buttons. The options are listed as commands to type.",
@@ -55,7 +55,7 @@ bmbtz({
       `If you can not see a card at all, send ${p}buttonstyle native.`));
   }
 
-  // One sample card per style: look at them and keep the one that looks like Toxic-MD.
+  // One sample card per style: look at them and keep the one that looks like Bmb-Tech.
   if (wanted === "try") {
     await repondre(box("BUTTON STYLE",
       `Sending ${buttons.STYLES.length - 1} sample cards, one per style.\n` +

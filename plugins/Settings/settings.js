@@ -16,7 +16,7 @@
  *      its .env default on the next restart/redeploy (which on Heroku
  *      happens often). They now persist via database/db.js (through
  *      lib/settingsCache.js's write-through cache), matching how
- *      NOVA-XMD keeps bot settings in its database instead of app.json.
+ *      BMB-TECH keeps bot settings in its database instead of app.json.
  *
  * BUTTONS (the same style as .antilink and .welcome):
  *   .anticall (and every other on/off command)  -> status + buttons  [On] [Off]

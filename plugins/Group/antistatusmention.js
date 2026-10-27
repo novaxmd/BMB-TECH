@@ -5,7 +5,7 @@ const db = require("../../database/db");
 /**
  * antistatusmention
  *
- * Ported from NOVA-XMD's updated antistatusmention settings command
+ * Ported from BMB-TECH's updated antistatusmention settings command
  * (4 modes: off/delete/warn/kick), adapted to BMB-TECH's bmbtz()
  * command style and lib/groupProtection.js storage instead of
  * database/config.js's getGroupSettings/updateGroupSetting.
