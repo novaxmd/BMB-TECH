@@ -25,7 +25,7 @@ const idsOf = (p) =>
 
 bmbtz({
   nomCom: "delele",
-  alias: ["del", "clear"],
+  alias: ["del", "delete", "futa", "clear"],
   categorie: "Group",
   reaction: "🧹",
 }, async (dest, client, o) => {
